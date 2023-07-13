@@ -1,5 +1,7 @@
 import pandas as pd
 
-df = pd.read_csv('demo.csv')
+df = pd.read_csv('nh_imgs.csv')
 
-df.to_csv("new_demo.csv", index=False)
+df = df.rename(columns = {'Unnamed: 0':'img_no'})
+
+df.to_csv("nh_imgs.csv", index=False)
