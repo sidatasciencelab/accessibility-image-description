@@ -1,10 +1,10 @@
 import streamlit as st
+import streamlit.components.v1 as components
+
 import csv
 import requests
 from cs50 import SQL
 from PIL import Image
-import streamlit.components.v1 as components
-
 import time
 import concurrent.futures
 import os
@@ -13,11 +13,17 @@ import glob
 import numpy as np
 
 def remove_images():
+
+    '''function that removes images from local storage when the page increments'''
+    
     files = glob.glob('images/*')
     for f in files:
         os.remove(f)
 
 def save_image_from_url(url, img_no, output_folder):
+
+    '''downloads images from web into local storage'''
+    
     image = requests.get(url)
     output_path = os.path.join(
         output_folder, 'img_' + str(img_no) + ".png"
@@ -26,7 +32,10 @@ def save_image_from_url(url, img_no, output_folder):
         f.write(image.content)
 
 
-def load(df, output_folder):    
+def load(df, output_folder):
+    
+    '''uses multithreading to get images from web for current page quickly '''
+    
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=5
     ) as executor:
@@ -47,6 +56,8 @@ def load(df, output_folder):
 
 def create_column(df, left_or_right):
 
+    '''generates column of five images, alt-text captions, etc. '''
+
     if left_or_right == "left":
         start_row = 0
     elif left_or_right == "right":
@@ -63,13 +74,7 @@ def create_column(df, left_or_right):
         orig_alt = row['alt']
     
 
-        st.subheader("Image: ")
-
-            
-
-        
-
-        
+        st.subheader("Image: ")      
         im = Image.open(src).resize((240, 240))
             
         st.image(im)
@@ -77,9 +82,10 @@ def create_column(df, left_or_right):
 
 
         if not st.session_state["checkbox_" + str(i)]:
-            
+
             st.text_input("Alternative text to revise: ", value=alt, key = "text_" + str(i))
         else:
+            # makes alt text non-editable if 'leave this one for later' is checked
             st.markdown('<div class="css-16idsys"><p>Alternative text to revise: </p></div>', unsafe_allow_html=True)
             st.code(alt, language="markdown")
 
@@ -89,6 +95,9 @@ def create_column(df, left_or_right):
 
         with st.expander("See original alt text"):
             st.write(orig_alt)
+
+        #spaces between image rows
+            
         st.markdown("#")
         st.markdown("#")
 
@@ -96,15 +105,19 @@ def submit_button():
     for index, row in curr_df.iterrows():
 
         if not st.session_state["checkbox_" + str(index)]:
+
+            # updates SQL database
+            
             db.execute('''UPDATE imgs SET approved_alt =
                 ''' + str(st.session_state["text_" + str(index)]) + '''
                 WHERE img_no = ''' + str(row['img_no']))
         else:
+            # sets approved_alt value of SQL row to 'TBD' if checkbox is checked
             db.execute('''UPDATE imgs
                 SET approved_alt = 'TBD'
                 WHERE img_no = ''' + str(row['img_no']))
 
-    
+    # increment session_state variables to change the page 
     st.session_state.page +=1
     st.session_state.reset = 1
 
@@ -118,11 +131,11 @@ st.set_page_config(layout="wide")
 if 'page' not in st.session_state:
     st.session_state.page = 0
 
-col_names = ['index', 'site_url', 'page_url', 'src', 'alt', 'model_alt', 'img_address']
-
 #establish SQL connection
 
 db = SQL("sqlite:///nh_imgs.db")
+
+# dataframe we'll use to produce the current page
 
 curr_df = pd.DataFrame.from_records(db.execute('''SELECT * FROM imgs
     WHERE approved_alt IS NULL
@@ -152,6 +165,8 @@ if st.session_state.reset:
     load(curr_df, 'images/')
     st.session_state.reset = 0
     time.sleep(5)
+
+# this script moves the focus to the top of the page on submit
 
 js = '''
 <script>
