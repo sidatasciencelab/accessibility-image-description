@@ -75,7 +75,7 @@ def create_column(df, left_or_right):
     
 
         st.subheader("Image: ")      
-        im = Image.open(src).resize((240, 240))
+        im = Image.open(src).thumbnail((240, 240))
             
         st.image(im)
         st.markdown("<p style='font-size: 14px; color: #D3D3D3'><i>" + page_url + "</i></p>", unsafe_allow_html=True)
