@@ -35,8 +35,6 @@ urls = doc.find("urlset")
 
 links = [a.text for a in urls.find_all("loc")]
 
-scrape_data = []
-
 HEADERS = {'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'}
 
 
@@ -50,6 +48,7 @@ def scrape_page(page_url):
     
     doc = BeautifulSoup(page.text, "html.parser")
     imgs = doc.find_all("img")
+    scrape_data = []
     
     for img in imgs:
         
@@ -60,8 +59,9 @@ def scrape_page(page_url):
         if src.startswith("//") or src.startswith("http"):
             src_url = src
         else:
-            src_url = 'https://naturalhistory.si.edu' + src
-            alt = img.get('alt')
+            src_url = url + src
+
+        alt = img.get('alt')
         
         img_data['site_url'] = url
         img_data['page_url'] = page_url
@@ -69,12 +69,22 @@ def scrape_page(page_url):
         img_data['alt'] = alt
         
         scrape_data.append(img_data)
-    
 
-with concurrent.futures.ProcessPoolExecutor() as executor:
-    executor.map(scrape_page, links)
+    return scrape_data
 
-for row in scrape_data:
-    max_value = db.execute("SELECT MAX(`img_no`) FROM imgs;")[0]['MAX(img_no)']
-    db.execute("INSERT INTO imgs (img_no, site_url, page_url, src, alt, model_alts, approved_alt) VALUES(?, ?, ?, ?, ?, ?, ?)", max_value, row[0], row[1], row[2], row[3], None, None)
+if __name__ == '__main__':
+
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        data = executor.map(scrape_page, links)
+
+    img_data = []
+
+    for datum in data:
+        for row in datum:
+            img_data.append(row)
+
+    for row in img_data:
+        max_value = db.execute("SELECT MAX(img_no) FROM imgs;")[0]['MAX(img_no)']
+        db.execute("INSERT INTO imgs (img_no, site_url, page_url, src, alt, model_alts, approved_alt) VALUES(?, ?, ?, ?, ?, ?, ?)", max_value + 1, row['site_url'], row['page_url'], row['src'], row['alt'], None, None)
 
