@@ -80,9 +80,13 @@ def create_column(df, left_or_right):
      
 
         st.subheader("Image: ")      
-        im = Image.open(src).resize((240, 240))
-            
-        st.image(im)
+        im = Image.open(src)
+
+        im.thumbnail((960, 240))
+
+        with st.container():
+            st.image(im)
+        
         st.markdown("<p style='font-size: 14px; color: #D3D3D3'><i>" + page_url + "</i></p>", unsafe_allow_html=True)
 
 
@@ -127,7 +131,11 @@ def submit_button():
 
     placeholder.empty()
 
+
 def on_select():
+    
+    #resets the interface when a different website is selected
+    
     st.session_state.reset = 1
 
 
@@ -136,8 +144,9 @@ museum_dict = {"Natural History Museum": 'https://naturalhistory.si.edu',
                "Museum of Asian Art": 'https://asia.si.edu'
                }
 
-
+# adding interface settings and widgets
 # read first ten rows of CSV file with image and alt-text
+
 st.set_page_config(layout="wide")
 
 if 'page' not in st.session_state:
@@ -177,7 +186,7 @@ if 'reset' not in st.session_state:
 
 
 
-
+# clears page of images + reloads
 if st.session_state.reset:
     remove_images()
 
