@@ -18,6 +18,11 @@ csv_path = 'nh_imgs.csv'
 
 
 
-data = db.execute("UPDATE imgs SET approved_alt = NULL")
+#data = db.execute("UPDATE imgs SET approved_alt = NULL")
 
 
+data = db.execute("SELECT * FROM imgs")
+
+df = pd.DataFrame.from_records(data, columns=['img_no', 'site_url', 'page_url', 'src', 'alt', 'model_alts', 'approved_alt'])
+
+df.to_csv('curr_data.csv')
